@@ -1272,7 +1272,8 @@ body::before {
 /* === SUBSIDY SYSTEM === */
 .subsidy-modal-content {
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: min(88vh, 980px);
 }
 .subsidy-form-container {
   display: flex;
