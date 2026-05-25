@@ -295,14 +295,14 @@ class GameEngine {
   // === SUBSIDY SYSTEM ===
   submitSubsidyApplication(data) {
     const result = this.subsidy.evaluateApplication(this, data);
+    this.subsidy.recordApplication(this.year);
     
     if (result.passed) {
       this.economy.earn(result.grantedAmount);
-      this.subsidy.recordApplication(this.year);
-      this.ui.addLog(`💰 補助金審査通過！ ${formatMoney(result.grantedAmount)}が交付されました。`, 'success');
+      this.ui.addLog(`💰 ${result.programName}が採択され、${formatMoney(result.grantedAmount)}が交付されました。`, 'success');
       this.ui.showNotification(`💰 補助金交付: ${formatMoney(result.grantedAmount)}`, 'success');
     } else {
-      this.ui.addLog('❌ 補助金審査不採択。アドバイスを確認して再申請してください。', 'warning');
+      this.ui.addLog(`❌ ${result.programName}は不採択でした。講評を確認してください。`, 'warning');
       this.ui.showNotification('❌ 補助金審査 不採択', 'error');
     }
     

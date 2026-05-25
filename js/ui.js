@@ -51,6 +51,16 @@ class UIManager {
     // Subsidy
     document.getElementById('btn-subsidy')?.addEventListener('click', () => this.showSubsidyModal());
     document.getElementById('btn-submit-subsidy')?.addEventListener('click', () => this.handleSubsidySubmit());
+    document.getElementById('subsidy-category')?.addEventListener('change', () => {
+      this.updateSubsidyProgramGuide();
+      this.updateSubsidyPreview();
+    });
+    document.getElementById('subsidy-modal')?.addEventListener('input', (e) => {
+      if (e.target.closest('.subsidy-form-container')) this.updateSubsidyPreview();
+    });
+    document.getElementById('subsidy-modal')?.addEventListener('change', (e) => {
+      if (e.target.closest('.subsidy-form-container')) this.updateSubsidyPreview();
+    });
 
     // Loan
     document.getElementById('btn-loan')?.addEventListener('click', () => this.showLoanModal());
@@ -540,7 +550,15 @@ class UIManager {
 
     const modal = document.getElementById('subsidy-modal');
     const container = document.getElementById('subsidy-crops-container');
+    const categorySelect = document.getElementById('subsidy-category');
+    const objectivesContainer = document.getElementById('subsidy-objectives-container');
+    const usesContainer = document.getElementById('subsidy-uses-container');
+    const environmentContainer = document.getElementById('subsidy-environment-container');
     
+    categorySelect.innerHTML = this.game.subsidy.categories.map(category =>
+      `<option value="${category.id}">${category.name} (ゲーム内上限 ${formatMoney(category.maxAmount)})</option>`
+    ).join('');
+
     // Generate crop checkboxes
     let html = '';
     for (const [key, crop] of Object.entries(CROPS)) {
@@ -553,29 +571,127 @@ class UIManager {
     }
     container.innerHTML = html;
 
+    objectivesContainer.innerHTML = this.game.subsidy.objectiveOptions.map(option => `
+      <label>
+        <input type="checkbox" name="subsidy-objective" value="${option}">
+        ${option}
+      </label>
+    `).join('');
+
+    usesContainer.innerHTML = this.game.subsidy.useOptions.map(option => `
+      <label>
+        <input type="checkbox" name="subsidy-use" value="${option}">
+        ${option}
+      </label>
+    `).join('');
+
+    environmentContainer.innerHTML = this.game.subsidy.environmentOptions.map(option => `
+      <label>
+        <input type="checkbox" name="subsidy-environment" value="${option}">
+        ${option}
+      </label>
+    `).join('');
+
     // Reset form
+    document.getElementById('subsidy-project-name').value = '';
+    document.getElementById('subsidy-fiscal-year').value = `令和${this.game.year + 7}年度相当`;
     document.getElementById('subsidy-amount').value = '';
+    document.getElementById('subsidy-self-funding').value = '';
     document.getElementById('subsidy-appeal').value = '';
+    document.getElementById('subsidy-schedule').value = '';
+    document.getElementById('subsidy-regional-plan').value = '';
+    document.getElementById('subsidy-target-sales').value = '';
+    document.getElementById('subsidy-sales-channel').value = '';
     document.getElementById('ai-judging-overlay').style.display = 'none';
+    this.updateSubsidyProgramGuide();
+    this.updateSubsidyPreview();
 
     modal.classList.add('active');
   }
 
+  getSubsidyFormData() {
+    return {
+      category: document.getElementById('subsidy-category').value,
+      projectName: document.getElementById('subsidy-project-name').value,
+      fiscalYear: document.getElementById('subsidy-fiscal-year').value,
+      amount: document.getElementById('subsidy-amount').value,
+      selfFunding: document.getElementById('subsidy-self-funding').value,
+      appeal: document.getElementById('subsidy-appeal').value,
+      schedule: document.getElementById('subsidy-schedule').value,
+      regionalPlan: document.getElementById('subsidy-regional-plan').value,
+      targetSales: document.getElementById('subsidy-target-sales').value,
+      salesChannel: document.getElementById('subsidy-sales-channel').value,
+      crops: Array.from(document.querySelectorAll('input[name="subsidy-crop"]:checked')).map(cb => cb.value),
+      objectives: Array.from(document.querySelectorAll('input[name="subsidy-objective"]:checked')).map(cb => cb.value),
+      uses: Array.from(document.querySelectorAll('input[name="subsidy-use"]:checked')).map(cb => cb.value),
+      environmentPractices: Array.from(document.querySelectorAll('input[name="subsidy-environment"]:checked')).map(cb => cb.value),
+    };
+  }
+
+  updateSubsidyProgramGuide() {
+    const category = this.game.subsidy.getCategory(document.getElementById('subsidy-category').value);
+    const guide = document.getElementById('subsidy-program-guide');
+    if (!category || !guide) return;
+
+    guide.innerHTML = `
+      <h4>参考制度メモ</h4>
+      <div class="subsidy-meta-list">
+        <div class="subsidy-meta-item"><strong>制度名</strong><span>${category.name}</span></div>
+        <div class="subsidy-meta-item"><strong>制度趣旨</strong><span>${category.desc}</span></div>
+        <div class="subsidy-meta-item"><strong>現実制度の目安</strong><span>${category.actualScale}</span></div>
+        <div class="subsidy-meta-item"><strong>審査の見どころ</strong><span>${category.policyNote}</span></div>
+      </div>
+    `;
+  }
+
+  updateSubsidyPreview() {
+    const preview = document.getElementById('subsidy-application-preview');
+    if (!preview) return;
+
+    const data = this.getSubsidyFormData();
+    const category = this.game.subsidy.getCategory(data.category);
+    const area = IMIZU_AREAS[this.game.areaId];
+    const farmland = FARMLAND_TYPES[this.game.farmlandType];
+    const cropNames = data.crops.map(cropId => CROPS[cropId]?.name || cropId);
+
+    preview.innerHTML = `
+      <h4>申請書プレビュー</h4>
+      <div class="subsidy-sheet-lines">
+        <div class="subsidy-sheet-line"><strong>制度名</strong><span>${category ? category.name : '未選択'}</span></div>
+        <div class="subsidy-sheet-line"><strong>申請者</strong><span>${this.game.character ? this.game.character.name : '未設定'} / ${this.game.farmingMode === 'cooperative' ? '営農組合' : '個人農家'}</span></div>
+        <div class="subsidy-sheet-line"><strong>地区・農地</strong><span>${area ? area.name : '未設定'} / ${farmland ? farmland.name : '未設定'}</span></div>
+        <div class="subsidy-sheet-line"><strong>事業名</strong><span>${data.projectName || '未入力'}</span></div>
+        <div class="subsidy-sheet-line"><strong>希望額</strong><span>${data.amount ? formatMoney(parseInt(data.amount, 10)) : '未入力'}</span></div>
+        <div class="subsidy-sheet-line"><strong>自己資金</strong><span>${data.selfFunding ? formatMoney(parseInt(data.selfFunding, 10)) : '未入力'}</span></div>
+        <div class="subsidy-sheet-line"><strong>主要作物</strong><span>${cropNames.length ? cropNames.join('、') : '未選択'}</span></div>
+        <div class="subsidy-sheet-line"><strong>目的</strong><span>${data.objectives.length ? data.objectives.join(' / ') : '未選択'}</span></div>
+        <div class="subsidy-sheet-line"><strong>使途</strong><span>${data.uses.length ? data.uses.join(' / ') : '未選択'}</span></div>
+        <div class="subsidy-sheet-line"><strong>環境取組</strong><span>${data.environmentPractices.length ? data.environmentPractices.join(' / ') : '未選択'}</span></div>
+        <div class="subsidy-sheet-line"><strong>販路・売上目標</strong><span>${data.salesChannel || '未入力'} ${data.targetSales ? `/ ${formatMoney(parseInt(data.targetSales, 10))}` : ''}</span></div>
+      </div>
+      <p style="margin-top:10px;">${data.appeal ? data.appeal : 'ここに事業計画の要旨が表示されます。'} </p>
+    `;
+  }
+
   handleSubsidySubmit() {
-    const category = document.getElementById('subsidy-category').value;
-    const amountStr = document.getElementById('subsidy-amount').value;
-    const appeal = document.getElementById('subsidy-appeal').value;
-
-    const cropCheckboxes = document.querySelectorAll('input[name="subsidy-crop"]:checked');
-    const crops = Array.from(cropCheckboxes).map(cb => cb.value);
-
-    const amount = parseInt(amountStr);
+    const applicationData = this.getSubsidyFormData();
+    const amount = parseInt(applicationData.amount, 10);
     if (isNaN(amount) || amount <= 0) {
-      this.showNotification('⚠️ 希望金額を正しく入力してください', 'warning');
+      this.showNotification('⚠️ 希望交付額を正しく入力してください', 'warning');
       return;
     }
-
-    const applicationData = { category, amount, crops, appeal };
+    if (!applicationData.projectName.trim()) {
+      this.showNotification('⚠️ 事業名を入力してください', 'warning');
+      return;
+    }
+    if (!applicationData.appeal.trim() || !applicationData.schedule.trim() || !applicationData.regionalPlan.trim()) {
+      this.showNotification('⚠️ 事業計画、実施内容、地域との整合を記入してください', 'warning');
+      return;
+    }
+    if (applicationData.crops.length === 0 || applicationData.objectives.length === 0 || applicationData.uses.length === 0) {
+      this.showNotification('⚠️ 作物、目的、資金使途は最低1つ選択してください', 'warning');
+      return;
+    }
 
     // Show AI Spinner
     const overlay = document.getElementById('ai-judging-overlay');
@@ -595,10 +711,44 @@ class UIManager {
     const content = document.getElementById('subsidy-result-content');
     
     const resultClass = result.passed ? 'passed' : 'rejected';
+    const sheet = result.applicationSheet;
     
     content.innerHTML = `
       <div class="subsidy-result-box ${resultClass}">
-        ${result.advice}
+        <strong>${result.programName}</strong><br>
+        ${result.summary}<br>
+        総合評価: ${result.score}/100
+      </div>
+      <div class="subsidy-sheet-preview">
+        <h4>審査内訳</h4>
+        <div class="subsidy-breakdown">
+          ${result.breakdown.map(row => `
+            <div class="subsidy-breakdown-row">
+              <strong>${row.label}</strong>
+              <span>${row.score}/${row.max}</span>
+            </div>
+          `).join('')}
+        </div>
+        <p style="margin-top:10px;">制度参考: ${result.policyReference}</p>
+      </div>
+      <div class="subsidy-sheet-preview">
+        <h4>提出書類の要約</h4>
+        <div class="subsidy-sheet-lines">
+          <div class="subsidy-sheet-line"><strong>事業名</strong><span>${sheet.projectName}</span></div>
+          <div class="subsidy-sheet-line"><strong>申請者</strong><span>${sheet.applicantName} / ${sheet.farmingMode}</span></div>
+          <div class="subsidy-sheet-line"><strong>地区・農地</strong><span>${sheet.areaName} / ${sheet.farmlandName}</span></div>
+          <div class="subsidy-sheet-line"><strong>主要作物</strong><span>${sheet.crops.join('、')}</span></div>
+          <div class="subsidy-sheet-line"><strong>希望額 / 自己資金</strong><span>${formatMoney(sheet.amount)} / ${formatMoney(sheet.selfFunding)}</span></div>
+          <div class="subsidy-sheet-line"><strong>目的</strong><span>${sheet.objectives.join(' / ')}</span></div>
+          <div class="subsidy-sheet-line"><strong>使途</strong><span>${sheet.uses.join(' / ')}</span></div>
+          <div class="subsidy-sheet-line"><strong>販路・売上目標</strong><span>${sheet.salesChannel} / ${formatMoney(sheet.targetSales)}</span></div>
+        </div>
+      </div>
+      <div class="subsidy-sheet-preview">
+        <h4>審査コメント</h4>
+        <div class="subsidy-feedback-list">
+          ${result.feedback.map(item => `<div class="subsidy-feedback-item">${item}</div>`).join('')}
+        </div>
       </div>
     `;
     

@@ -179,20 +179,45 @@
         <button class="modal-close">&times;</button>
       </div>
       <div class="subsidy-form-container">
-        <p class="hint">営農計画を作成し、AI審査員に提出してください。（申請は1年に1回まで）</p>
+        <p class="hint">農林水産省の制度を参考にした申請書を作成し、審査に提出してください。（申請は1年に1回まで）</p>
         
         <div class="form-group">
-          <label>申請枠</label>
-          <select id="subsidy-category">
-            <option value="startup">新規就農・経営自立支援枠 (上限50万円)</option>
-            <option value="scale">規模拡大・機械化促進枠 (上限100万円)</option>
-            <option value="environment">環境保全型農業推進枠 (上限30万円)</option>
-          </select>
+          <label>制度区分</label>
+          <select id="subsidy-category"></select>
+        </div>
+
+        <div class="subsidy-program-guide" id="subsidy-program-guide"></div>
+
+        <div class="subsidy-two-col">
+          <div class="form-group">
+            <label>事業名</label>
+            <input type="text" id="subsidy-project-name" placeholder="例: 新湊地区水田の直売米ブランド立上げ計画">
+          </div>
+          <div class="form-group">
+            <label>実施年度</label>
+            <input type="text" id="subsidy-fiscal-year" placeholder="例: 令和8年度相当">
+          </div>
         </div>
         
+        <div class="subsidy-two-col">
+          <div class="form-group">
+            <label>希望交付額 (円)</label>
+            <input type="number" id="subsidy-amount" placeholder="例: 300000" min="10000" step="10000">
+          </div>
+          <div class="form-group">
+            <label>自己資金・自己負担 (円)</label>
+            <input type="number" id="subsidy-self-funding" placeholder="例: 150000" min="0" step="10000">
+          </div>
+        </div>
+
         <div class="form-group">
-          <label>希望金額 (円)</label>
-          <input type="number" id="subsidy-amount" placeholder="例: 300000" min="10000" step="10000">
+          <label>事業の目的（複数選択可）</label>
+          <div class="subsidy-tag-grid" id="subsidy-objectives-container"></div>
+        </div>
+
+        <div class="form-group">
+          <label>資金使途（複数選択可）</label>
+          <div class="subsidy-tag-grid" id="subsidy-uses-container"></div>
         </div>
         
         <div class="form-group">
@@ -203,16 +228,44 @@
         </div>
         
         <div class="form-group">
-          <label>営農アピールポイント・ビジョン (AI審査の重要項目)</label>
-          <textarea id="subsidy-appeal" rows="5" placeholder="独自のブランド化、地域への貢献、効率化の工夫、土づくりへのこだわりなど、あなたの農業ビジョンをアピールしてください。"></textarea>
+          <label>事業計画・営農ビジョン</label>
+          <textarea id="subsidy-appeal" rows="5" placeholder="販路、単価、収量、設備導入の狙い、誰に何を売るか、経営上の課題と改善方法を具体的に記載してください。"></textarea>
         </div>
+
+        <div class="form-group">
+          <label>実施内容・スケジュール</label>
+          <textarea id="subsidy-schedule" rows="4" placeholder="例: 4月に育苗設備導入、5月に田植え、8月に直売所出荷、冬季に土づくり研修参加など。"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>地域計画・地域貢献との整合</label>
+          <textarea id="subsidy-regional-plan" rows="4" placeholder="地域の担い手として引き受ける農地、共同利用する機械、地域イベント出荷、雇用や後継者育成への寄与を記載してください。"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>環境負荷低減の取組（複数選択可）</label>
+          <div class="subsidy-tag-grid" id="subsidy-environment-container"></div>
+        </div>
+
+        <div class="subsidy-two-col">
+          <div class="form-group">
+            <label>目標年間売上 (円)</label>
+            <input type="number" id="subsidy-target-sales" placeholder="例: 1200000" min="0" step="50000">
+          </div>
+          <div class="form-group">
+            <label>主な販路</label>
+            <input type="text" id="subsidy-sales-channel" placeholder="例: 直売所、JA出荷、飲食店、学校給食">
+          </div>
+        </div>
+
+        <div class="subsidy-sheet-preview" id="subsidy-application-preview"></div>
         
-        <button class="action-btn primary full-width" id="btn-submit-subsidy">AI審査員に提出する</button>
+        <button class="action-btn primary full-width" id="btn-submit-subsidy">申請書を提出する</button>
       </div>
       <div class="ai-judging-overlay" id="ai-judging-overlay" style="display:none;">
         <div class="ai-spinner">🤖</div>
-        <h3>AI審査員が評価中...</h3>
-        <p>「アピールポイントを解析しています...」</p>
+        <h3>審査書類を確認中...</h3>
+        <p>「制度適合性、資金計画、地域性、環境配慮を点検しています...」</p>
       </div>
     </div>
   </div>
@@ -221,7 +274,7 @@
   <div class="modal-overlay" id="subsidy-result-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>🤖 AI審査結果</h2>
+        <h2>🤖 補助金審査結果</h2>
         <button class="modal-close">&times;</button>
       </div>
       <div id="subsidy-result-content"></div>
