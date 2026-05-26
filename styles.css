@@ -30,11 +30,12 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  height: 100%;
+  min-height: 100%;
   font-family: 'Noto Sans JP', sans-serif;
   background: var(--bg-deep);
   color: var(--text-primary);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body {
@@ -62,7 +63,8 @@ body::before {
     "header header header"
     "left   main   right"
     "bottom bottom bottom";
-  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
   gap: 0;
   position: relative;
   z-index: 1;
@@ -127,6 +129,7 @@ body::before {
 .left-panel {
   grid-area: left;
   padding: 16px;
+  min-height: 0;
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background: rgba(10,22,40,0.6);
@@ -209,6 +212,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
   padding: 20px;
   overflow: auto;
 }
@@ -304,6 +308,7 @@ body::before {
 .right-panel {
   grid-area: right;
   padding: 16px;
+  min-height: 0;
   overflow-y: auto;
   border-left: 1px solid var(--border);
   background: rgba(10,22,40,0.6);
@@ -478,6 +483,8 @@ body::before {
   z-index: 100;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
   backdrop-filter: blur(4px);
 }
 .modal-overlay.active { display: flex; }
@@ -487,9 +494,10 @@ body::before {
   border-radius: 16px;
   padding: 24px;
   max-width: 720px;
-  max-height: 80vh;
+  max-height: calc(100dvh - 40px);
   width: 90%;
   overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow: 0 24px 64px rgba(0,0,0,0.6);
   animation: modalIn 0.3s ease;
 }
@@ -623,10 +631,27 @@ body::before {
 @media (max-width: 1100px) {
   #app {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-rows: auto auto auto auto auto;
     grid-template-areas: "header" "left" "main" "right" "bottom";
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
   }
-  .left-panel, .right-panel { border: none; border-bottom: 1px solid var(--border); max-height: 250px; }
+  .left-panel,
+  .right-panel {
+    border: none;
+    border-bottom: 1px solid var(--border);
+    max-height: none;
+    overflow: visible;
+  }
+  .main-area {
+    align-items: stretch;
+    overflow: visible;
+  }
+  .action-bar {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
 }
 
 /* --- Character Badge in Header --- */
@@ -1273,7 +1298,7 @@ body::before {
 .subsidy-modal-content {
   position: relative;
   overflow-y: auto;
-  max-height: min(88vh, 980px);
+  max-height: calc(100dvh - 40px);
 }
 .subsidy-form-container {
   display: flex;
