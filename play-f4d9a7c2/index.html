@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="豊穣の大地 - 本格農業経営シミュレーションゲーム。土壌分析、天候管理、作物栽培のすべてを体験。">
+  <title>🌾 豊穣の大地 - 農業経営シミュレーション</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ===== HEADER ===== -->
+    <header class="game-header">
+      <div class="header-left">
+        <div class="game-title">🌾 豊穣の大地</div>
+        <div class="header-info" id="header-date">1年目 4月 1日</div>
+        <div class="header-info" id="header-season">🌸 春</div>
+        <div class="header-info" id="header-weather">☀️ 晴れ</div>
+        <div class="header-info" id="header-temp">🌡️ 15°C〜22°C</div>
+        <div class="header-info header-char" id="header-character" style="display:none"></div>
+      </div>
+      <div class="header-right">
+        <button class="header-btn" id="btn-loan">🏦 融資・相談</button>
+        <button class="header-btn" id="btn-subsidy">💰 補助金申請</button>
+        <div class="header-money" id="header-money">¥100,000</div>
+        <button class="header-btn" id="btn-save">💾 保存</button>
+        <button class="header-btn" id="btn-load">📂 読込</button>
+      </div>
+    </header>
+
+    <!-- ===== LEFT PANEL: Weather ===== -->
+    <aside class="left-panel">
+      <div class="panel-section">
+        <h3>🌤️ 今日の天気</h3>
+        <div id="weather-detail"></div>
+      </div>
+      <div id="weather-events" style="display:none"></div>
+      <div class="panel-section">
+        <h3>📅 5日間予報</h3>
+        <div class="forecast-row" id="weather-forecast"></div>
+      </div>
+      <div class="panel-section">
+        <h3>📜 イベントログ</h3>
+        <div class="log-section" id="event-log"></div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN AREA: Farm Grid ===== -->
+    <main class="main-area">
+      <div class="farm-grid" id="farm-grid"></div>
+    </main>
+
+    <!-- ===== RIGHT PANEL: Info ===== -->
+    <aside class="right-panel">
+      <canvas id="radar-chart" width="220" height="220"></canvas>
+      <div id="info-panel-content">
+        <p class="hint">🌱 区画を選択して情報を表示</p>
+      </div>
+    </aside>
+
+    <!-- ===== BOTTOM: Action Bar ===== -->
+    <nav class="action-bar">
+      <div class="action-group">
+        <button class="action-btn time-btn" id="btn-next-day">
+          <span class="btn-icon">⏩</span>次の日
+        </button>
+        <button class="action-btn time-btn" id="btn-next-week">
+          <span class="btn-icon">⏭️</span>1週間
+        </button>
+      </div>
+      <div class="action-group">
+        <button class="action-btn primary" id="btn-plant" disabled>
+          <span class="btn-icon">🌱</span>植える
+        </button>
+        <button class="action-btn harvest-btn" id="btn-harvest" disabled>
+          <span class="btn-icon">🎉</span>収穫
+        </button>
+      </div>
+      <div class="action-group">
+        <button class="action-btn" id="btn-irrigate" disabled>
+          <span class="btn-icon">🌊</span>灌漑 ¥500
+        </button>
+        <button class="action-btn" id="btn-weed" disabled>
+          <span class="btn-icon">🌿</span>除草
+        </button>
+      </div>
+      <div class="action-group">
+        <button class="action-btn" id="btn-fertilize-n" disabled>
+          <span class="btn-icon">💊</span>窒素 ¥800
+        </button>
+        <button class="action-btn" id="btn-fertilize-p" disabled>
+          <span class="btn-icon">💊</span>リン酸 ¥700
+        </button>
+        <button class="action-btn" id="btn-fertilize-k" disabled>
+          <span class="btn-icon">💊</span>カリ ¥700
+        </button>
+        <button class="action-btn" id="btn-compost" disabled>
+          <span class="btn-icon">🧴</span>堆肥 ¥1000
+        </button>
+        <button class="action-btn" id="btn-lime" disabled>
+          <span class="btn-icon">🧪</span>石灰 ¥600
+        </button>
+      </div>
+      <div class="action-group">
+        <button class="action-btn" id="btn-pesticide" disabled>
+          <span class="btn-icon">🐛</span>農薬 ¥1200
+        </button>
+        <button class="action-btn" id="btn-mulch" disabled>
+          <span class="btn-icon">🛡️</span>マルチ ¥1500
+        </button>
+        <button class="action-btn" id="btn-windbreak" disabled>
+          <span class="btn-icon">🏗️</span>防風 ¥3000
+        </button>
+      </div>
+      <div class="action-group">
+        <button class="action-btn" id="btn-analyze" disabled>
+          <span class="btn-icon">🔬</span>分析
+        </button>
+        <button class="action-btn" id="btn-shop">
+          <span class="btn-icon">🏪</span>市場
+        </button>
+        <button class="action-btn" id="btn-hr">
+          <span class="btn-icon">👨‍💼</span>人材管理
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ===== MODALS ===== -->
+  <!-- Plant Modal -->
+  <div class="modal-overlay" id="plant-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🌱 作物を選択</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div id="plant-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Shop Modal -->
+  <div class="modal-overlay" id="shop-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🏪 市場・経営情報</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div id="shop-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Analysis Modal -->
+  <div class="modal-overlay" id="analysis-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🔬 土壌分析レポート</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div id="analysis-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Harvest Modal -->
+  <div class="modal-overlay" id="harvest-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🎉 収穫結果</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div id="harvest-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Subsidy Application Modal -->
+  <div class="modal-overlay" id="subsidy-modal">
+    <div class="modal-content subsidy-modal-content">
+      <div class="modal-header">
+        <h2>📄 射水市 補助金・助成金申請</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="subsidy-form-container">
+        <p class="hint">農林水産省の制度を参考にした申請書を作成し、審査に提出してください。（申請は1年に1回まで）</p>
+        
+        <div class="form-group">
+          <label>制度区分</label>
+          <select id="subsidy-category"></select>
+        </div>
+
+        <div class="subsidy-program-guide" id="subsidy-program-guide"></div>
+
+        <div class="subsidy-two-col">
+          <div class="form-group">
+            <label>事業名</label>
+            <input type="text" id="subsidy-project-name" placeholder="例: 新湊地区水田の直売米ブランド立上げ計画">
+          </div>
+          <div class="form-group">
+            <label>実施年度</label>
+            <input type="text" id="subsidy-fiscal-year" placeholder="例: 令和8年度相当">
+          </div>
+        </div>
+        
+        <div class="subsidy-two-col">
+          <div class="form-group">
+            <label>希望交付額 (円)</label>
+            <input type="number" id="subsidy-amount" placeholder="例: 300000" min="10000" step="10000">
+          </div>
+          <div class="form-group">
+            <label>自己資金・自己負担 (円)</label>
+            <input type="number" id="subsidy-self-funding" placeholder="例: 150000" min="0" step="10000">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>事業の目的（複数選択可）</label>
+          <div class="subsidy-tag-grid" id="subsidy-objectives-container"></div>
+        </div>
+
+        <div class="form-group">
+          <label>資金使途（複数選択可）</label>
+          <div class="subsidy-tag-grid" id="subsidy-uses-container"></div>
+        </div>
+        
+        <div class="form-group">
+          <label>主要栽培予定作物 (複数選択可)</label>
+          <div class="crop-checkboxes" id="subsidy-crops-container">
+            <!-- Checkboxes generated by JS -->
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>事業計画・営農ビジョン</label>
+          <textarea id="subsidy-appeal" rows="5" placeholder="販路、単価、収量、設備導入の狙い、誰に何を売るか、経営上の課題と改善方法を具体的に記載してください。"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>実施内容・スケジュール</label>
+          <textarea id="subsidy-schedule" rows="4" placeholder="例: 4月に育苗設備導入、5月に田植え、8月に直売所出荷、冬季に土づくり研修参加など。"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>地域計画・地域貢献との整合</label>
+          <textarea id="subsidy-regional-plan" rows="4" placeholder="地域の担い手として引き受ける農地、共同利用する機械、地域イベント出荷、雇用や後継者育成への寄与を記載してください。"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>環境負荷低減の取組（複数選択可）</label>
+          <div class="subsidy-tag-grid" id="subsidy-environment-container"></div>
+        </div>
+
+        <div class="subsidy-two-col">
+          <div class="form-group">
+            <label>目標年間売上 (円)</label>
+            <input type="number" id="subsidy-target-sales" placeholder="例: 1200000" min="0" step="50000">
+          </div>
+          <div class="form-group">
+            <label>主な販路</label>
+            <input type="text" id="subsidy-sales-channel" placeholder="例: 直売所、JA出荷、飲食店、学校給食">
+          </div>
+        </div>
+
+        <div class="subsidy-sheet-preview" id="subsidy-application-preview"></div>
+        
+        <button class="action-btn primary full-width" id="btn-submit-subsidy">申請書を提出する</button>
+      </div>
+      <div class="ai-judging-overlay" id="ai-judging-overlay" style="display:none;">
+        <div class="ai-spinner">🤖</div>
+        <h3>審査書類を確認中...</h3>
+        <p>「制度適合性、資金計画、地域性、環境配慮を点検しています...」</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subsidy Result Modal -->
+  <div class="modal-overlay" id="subsidy-result-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🤖 補助金審査結果</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div id="subsidy-result-content"></div>
+    </div>
+  </div>
+
+  <!-- Loan Application & Consulting Modal -->
+  <div class="modal-overlay" id="loan-modal">
+    <div class="modal-content subsidy-modal-content">
+      <div class="modal-header">
+        <h2>🏦 農業融資・相談窓口</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="subsidy-form-container">
+        
+        <div id="loan-consult-section">
+          <p class="hint">融資を申し込む前に、AIコンサルタントに現在の経営状況を診断してもらいましょう。</p>
+          <button class="action-btn" id="btn-consult-loan" style="width: 100%; margin-bottom: 10px;">🤖 事前相談（コンサルティング）を受ける</button>
+          <div id="loan-consult-result" style="display:none;" class="subsidy-result-box"></div>
+        </div>
+
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
+
+        <p class="hint">融資申請フォーム（審査通過で即時借入、毎年春に自動返済）</p>
+        <div class="form-group">
+          <label>融資プラン</label>
+          <select id="loan-type">
+            <option value="youth">青年等就農資金 (無利子 / 上限200万)</option>
+            <option value="modern">農業近代化資金 (低利1.5% / 上限500万)</option>
+            <option value="super_l">スーパーL資金 (低利0.5% / 上限1000万)</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>借入希望金額 (円)</label>
+          <input type="number" id="loan-amount" placeholder="例: 1000000" min="50000" step="50000">
+        </div>
+
+        <div class="form-group">
+          <label>返済期間</label>
+          <select id="loan-years">
+            <option value="3">3年</option>
+            <option value="5" selected>5年</option>
+            <option value="10">10年</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>資金使途・事業計画 (AI審査の重要項目)</label>
+          <textarea id="loan-appeal" rows="4" placeholder="「トラクター購入による効率化」「ビニールハウス建設による収量増加」など、具体的な投資効果と返済見込みを記入してください。"></textarea>
+        </div>
+        
+        <button class="action-btn primary full-width" id="btn-submit-loan">AI融資審査に申し込む</button>
+      </div>
+      <div class="ai-judging-overlay" id="ai-judging-overlay-loan" style="display:none;">
+        <div class="ai-spinner">🤖</div>
+        <h3>AI融資担当者が審査中...</h3>
+        <p>「返済能力と事業計画を解析しています...」</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loan Result Modal -->
+  <div class="modal-overlay" id="loan-result-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🤖 AI融資審査結果</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div id="loan-result-content"></div>
+    </div>
+  </div>
+
+  <!-- HR Modal -->
+  <div class="modal-overlay" id="hr-modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h2>👨‍💼 人材管理・リクルート</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div id="hr-modal-content">
+        <div class="shop-section">
+          <h3>求人募集 (掲載費用: 10,000円)</h3>
+          <p class="hint" style="margin-top:0; text-align:left;">数日後に応募者が集まります。資金に余裕がある場合のみ利用してください。</p>
+          <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button id="btn-post-part" class="action-btn primary">🧹 パート求人を出す</button>
+            <button id="btn-post-full" class="action-btn primary">🚜 正社員求人を出す</button>
+          </div>
+        </div>
+        <div class="shop-section">
+          <h3>📩 面接候補者</h3>
+          <div id="hr-candidates-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+        <div class="shop-section" style="margin-top:20px;">
+          <h3>👥 現在の従業員</h3>
+          <div id="hr-employees-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Character Select Overlay -->
+  <div class="char-select-overlay" id="char-select-overlay"></div>
+
+  <!-- Notifications -->
+  <div id="notifications"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/soil.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/crop.js"></script>
+  <script src="js/economy.js"></script>
+  <script src="js/subsidy.js"></script>
+  <script src="js/loan.js"></script>
+  <script src="js/hr.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
